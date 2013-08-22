@@ -6,7 +6,7 @@
 
   var addCallbackToUrl = function(url, callbackParamName, callbackFunctionName) {
     return url +
-      url.indexOf("?") === -1 ? "?" : "" +
+      (url.indexOf("?") === -1 ? "?" : "") +
       "&" +
       callbackParamName +
       "=" +
@@ -16,20 +16,21 @@
   var defineCallback = function(callbackFunctionName, id, fn) {
     exports[callbackFunctionName] = function() {
       fn.apply(null, arguments);
-      removeRequestScript(id);
+      teardown(id, callbackFunctionName);
     };
   };
 
-  var removeRequestScript = function(id) {
+  var teardown = function(id, functionName) {
     document.getElementById(id).remove();
+    exports[functionName] = undefined;
   };
 
-  var insertRequestScript = function(id, url) {
+  var insertScriptElement = function(id, url) {
     var script = document.createElement("script");
     script.setAttribute("id", id);
     script.setAttribute("src", url);
-    script.setAttribute("type", "text/javacript");
-    document.body.appendChild(script);
+    script.async = true;
+    document.getElementsByTagName('head')[0].appendChild(script);
   };
 
   var jsonp = function(url, options, fn) {
@@ -48,11 +49,12 @@
       options.callbackFunctionName = "jsonp" + id;
     }
 
-    url = addCallbackToUrl(url, options.callbackParamName,
-                           options.callbackFunctionName);
+    url = addCallbackToUrl(url, options.callbackParamName, options.callbackFunctionName);
+
     defineCallback(options.callbackFunctionName, id, fn);
-    insertRequestScript(id);
+    
+    insertScriptElement(id, url);
   };
 
-  exports.jsonp = jsonp;
+  exports.JSONP = jsonp;
 }(this));
